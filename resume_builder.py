@@ -3,6 +3,8 @@ from reportlab.pdfgen import canvas
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageDraw
+import os
+import tempfile
 
 def get_image_path():
     root = tk.Tk()
@@ -12,84 +14,90 @@ def get_image_path():
 
 def resize_circle_image(file_path):
     with Image.open(file_path) as img:
-        resized_img = img.resize((400, 400))
+        img.thumbnail((400, 400))
 
-        circle_mask = Image.new('L', resized_img.size, 0)
+        circle_mask = Image.new('L', img.size, 0)
         draw = ImageDraw.Draw(circle_mask)
-        draw.ellipse((0, 0, 400, 400), fill=255)
+        draw.ellipse((0, 0, img.size[0], img.size[1]), fill=255)
 
-        circular_image = Image.new("RGBA", (400, 400), 255)
-        circular_image.paste(resized_img, (0, 0), circle_mask)
+        # Create a new image with a transparent background
+        circular_image = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
+        circular_image.paste(img, (0, 0), circle_mask)
 
         return circular_image
 
 
 def create_resume_pdf(firstName, lastName, dateOfBirth,summary, phoneNumber, emailAddress, fullAdress, university,grad_year, workExperience, skills,profileImg):
-    pdf = canvas.Canvas("resume_with_photo.pdf", pagesize=letter)
+    pdf = canvas.Canvas(f"resume-{firstName.upper()}.pdf", pagesize=letter)
     width, height = letter
 
     # Load image
-    image = resize_circle_image(profileImg)
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+        profileImg.save(temp_file.name)
 
     # Draw Image (Center it at the top of the page)
-    image_width, image_height = 100, 100  # Set the image size
-    pdf.drawImage(image, (width - image_width) / 2, height - 150, width=image_width, height=image_height)
+    image_width, image_height = 150, 150  # Set the image size
+    pdf.drawImage(temp_file.name, (width - image_width) / 2, height - 150 - 20, width=image_width, height=image_height)
+
+    pdf.setTitle(f"{firstName.upper()} {lastName.upper()}'s Resume")
 
     # Title Section (Below Image)
     pdf.setFont("Helvetica-Bold", 24)
-    pdf.drawCentredString(width / 2.0, height - 180, f"{firstName.upper(), lastName.upper()}")
+    pdf.drawCentredString(width / 2.0, height - 180 - 20, f"{firstName.upper()} {lastName.upper()}")  # Moved down by 20
 
     # Contact Info
     pdf.setFont("Helvetica", 12)
-    pdf.drawCentredString(width / 2.0, height - 210,
-                          f"Email: {emailAddress} | Phone: {phoneNumber} | LinkedIn: linkedin.com")
+    pdf.drawCentredString(width / 2.0, height - 210 - 20,
+                          f"Email: {emailAddress} | Phone: {phoneNumber} | LinkedIn: linkedin.com")  # Moved down by 20
 
     # Summary Section
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, height - 250, "Summary:")
+    pdf.drawString(100, height - 250 - 20, "Summary:")  # Moved down by 20
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, height - 270, f"{summary}")
+    pdf.drawString(100, height - 270 - 20, f"{summary}")  # Moved down by 20
 
-    #about
+    # About Section
     pdf.setFont("Helvetica", 16)
-    pdf.drawString(100, height - 300, f"I was born in {dateOfBirth}")
+    pdf.drawString(100, height - 300 - 20, f"I was born in {dateOfBirth}")  # Moved down by 20
 
     # Education Section
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, height - 320, "Education:")
+    pdf.drawString(100, height - 320 - 20, "Education:")  # Moved down by 20
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, height - 340, f"{university}")
-    pdf.drawString(100, height - 355, f"{grad_year}")
+    pdf.drawString(100, height - 340 - 20, f"{university}")  # Moved down by 20
+    pdf.drawString(100, height - 355 - 20, f"{grad_year}")  # Moved down by 20
 
     # Experience Section
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, height - 390, "Experience:")
+    pdf.drawString(100, height - 390 - 20, "Experience:")  # Moved down by 20
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, height - 410, "Python Developer Intern")
-    pdf.drawString(100, height - 425, "Tech Solutions | January 2023 - Present")
-    pdf.drawString(100, height - 445, "- Worked on automating data pipelines for AI models")
-    pdf.drawString(100, height - 460, "- Built web scraping scripts using Python")
-    pdf.drawString(100, height - 475, "- Contributed to AI model performance monitoring tools")
+    pdf.drawString(100, height - 410 - 20, "Python Developer Intern")  # Moved down by 20
+    pdf.drawString(100, height - 425 - 20, "Tech Solutions | January 2023 - Present")  # Moved down by 20
+    pdf.drawString(100, height - 445 - 20, "- Worked on automating data pipelines for AI models")  # Moved down by 20
+    pdf.drawString(100, height - 460 - 20, "- Built web scraping scripts using Python")  # Moved down by 20
+    pdf.drawString(100, height - 475 - 20, "- Contributed to AI model performance monitoring tools")  # Moved down by 20
 
     # Skills Section
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, height - 510, "Skills:")
+    pdf.drawString(100, height - 510 - 20, "Skills:")  # Moved down by 20
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, height - 530, "- Python, SQL, MySQL")
-    pdf.drawString(100, height - 545, "- HTML, CSS, JavaScript")
-    pdf.drawString(100, height - 560, "- Machine Learning (Beginner)")
+    pdf.drawString(100, height - 530 - 20, "- Python, SQL, MySQL")  # Moved down by 20
+    pdf.drawString(100, height - 545 - 20, "- HTML, CSS, JavaScript")  # Moved down by 20
+    pdf.drawString(100, height - 560 - 20, "- Machine Learning (Beginner)")  # Moved down by 20
 
     # Save PDF
     pdf.save()
 
+
 if __name__ == '__main__':
-    profile_image = get_image_path()
+    profile_image_path = get_image_path()
+    profile_image = resize_circle_image(profile_image_path)
     while True:
         try:
             # first_name = input('Enter your first name: ')
             first_name = "yusufali"
             # last_name = input('Enter your last name: ')
-            last_name = ("kromitdinov")
+            last_name = "kromitdinov"
             date_of_birth = "2003-06-06"
             phone_number = "+15555555555"
             email_address = "aaa@gmail.com"
@@ -97,7 +105,7 @@ if __name__ == '__main__':
             university = "IDU"
             graduation = "2026"
             work_experience = "2"
-            skills = ["Python", "SQL", "MySQL"]
+            skills = "Python, SQL, MySQL"
             summary = "I am AI developer"
             # date_of_birth = input('Enter your date of birth(YYYY-MM-DD): ')
             # phone_number = input('Enter your phone number: ')
