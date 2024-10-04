@@ -6,20 +6,19 @@ from PIL import Image, ImageDraw
 import os
 import tempfile
 
+# HELPER FUNCTIONS
+from date_birth import get_date_of_birth
+from get_experience import get_experience
+from get_skills import get_skills
+from get_education import get_education
+
+
 def get_image_path():
     root = tk.Tk()
     root.withdraw()
     file_path = filedialog.askopenfilename(title='Choose a picture to your Resume', filetypes=[('Image files', '*.png;, *.jpg;, *.jpeg;, *bmp')])
     return file_path
-def get_date_of_birth():
-    # get_month = input("Enter your birth month(January): ")
-    get_month = 'January'
-    # get_day = input("Enter your birth day(1): ")
-    get_day = '5'
-    # get_year = input("Enter your birth year(2000): ")
-    get_year = '2003'
-    date_of_birth = f"Birthday {get_month} {get_day}, {get_year}"
-    return date_of_birth
+
 
 def resize_circle_image(file_path):
     with Image.open(file_path) as img:
@@ -36,7 +35,7 @@ def resize_circle_image(file_path):
         return circular_image
 
 
-def create_resume_pdf(firstName, lastName,summary, phoneNumber, emailAddress,linkedinProfile, fullAdress, university,grad_year, workExperience, skills,profileImg):
+def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfile,date_of_birth,summary,  education_list, exp_list, skills_list,profileImg):
     pdf = canvas.Canvas(f"resume-{firstName.upper()}.pdf", pagesize=letter)
     width, height = letter
 
@@ -52,53 +51,100 @@ def create_resume_pdf(firstName, lastName,summary, phoneNumber, emailAddress,lin
     pdf.setTitle(f"{firstName.upper()} {lastName.upper()}'s Resume")
     # Title Section (Below Image)
     pdf.setFont("Helvetica-Bold", 24)
-    title_y_position = image_y_position - image_height - 10  # 30 points below image
+    title_y_position = image_y_position-50  # 30 points below image
     pdf.drawCentredString(width / 2.0, title_y_position, f"{firstName.upper()} {lastName.upper()}")
 
     # Contact Info (Move this down further so it's below the title)
+    # pdf.setFont("Helvetica", 12)
+    # line_height = 20  # Spacing between lines
+    # contact_y_position = title_y_position - 25  # 25 points below the title for contact info
+    # pdf.drawCentredString(width / 2.5, contact_y_position, "Email: ")
+    # pdf.setFillColorRGB(0,0,1)
+    # pdf.drawCentredString(width / 2.0, contact_y_position, f"{emailAddress}")
+    #
+    #
+    # pdf.setFillColorRGB(0,0,0)
+    # pdf.drawCentredString(width / 2.0, contact_y_position - line_height, f"Phone: {phoneNumber}")
+    # pdf.drawCentredString(width / 2.7, contact_y_position -2 * line_height, "Linkedin: ")
+    #
+    #
+    # pdf.setFillColorRGB(0,0,1)
+    # pdf.drawCentredString(width / 2.0, contact_y_position - 2 * line_height, f"{linkedinProfile}")
+    #
+    #
+    # pdf.setFillColorRGB(0,0,0)
+    # pdf.drawCentredString(width / 2.0, contact_y_position - 3 * line_height, date_of_birth)
+    # Set the font and sizes for labels and content
+    # Set font and line height
     pdf.setFont("Helvetica", 12)
     line_height = 20  # Spacing between lines
-    date_of_birth = get_date_of_birth()
-    contact_y_position = title_y_position - 20  # 40 points below the title for contact info
-    pdf.drawCentredString(width / 2.0, contact_y_position, f"Email: {emailAddress}")
-    pdf.drawCentredString(width / 2.0, contact_y_position - line_height, f"Phone: {phoneNumber}")
-    pdf.drawCentredString(width / 2.0, contact_y_position - 2 * line_height, f"LinkedIn: {linkedinProfile}")
-    pdf.drawCentredString(width / 2.0, contact_y_position - 3 * line_height, date_of_birth)
+    contact_y_position = title_y_position - 40  # Adjust spacing for contact info
+
+    # Helper function to center the label and content, but left-align them
+    def draw_left_aligned_label_content(pdf, label, content, y_position):
+        label_width = pdf.stringWidth(label, "Helvetica", 12)  # Width of the label
+        content_width = pdf.stringWidth(content, "Helvetica", 12)  # Width of the content
+        total_width = label_width + content_width  # Total width of label + content
+        x_position = (width - total_width) / 2  # Calculate x position to center the total width
+        pdf.drawString(x_position, y_position, label)  # Draw the label
+        pdf.setFillColorRGB(0, 0, 1)  # Blue color for the content
+        pdf.drawString(x_position + label_width, y_position, content)  # Draw the content right after the label
+        pdf.setFillColorRGB(0, 0, 0)  # Reset to black
+
+    # Email
+    draw_left_aligned_label_content(pdf, "Email: ", emailAddress, contact_y_position)
+
+    # Phone Number
+    draw_left_aligned_label_content(pdf, "Phone: ", phoneNumber, contact_y_position - line_height)
+
+    # LinkedIn
+    draw_left_aligned_label_content(pdf, "LinkedIn: ", linkedinProfile, contact_y_position - 2 * line_height)
+
+    # Date of Birth
+    draw_left_aligned_label_content(pdf, "Date of Birth: ", date_of_birth, contact_y_position - 3 * line_height)
 
     # Summary Section (Adjust position dynamically)
-    summary_y_position = contact_y_position - 3 * line_height - 40  # 40 points below contact info
+    summary_y_position = contact_y_position - 3 * line_height - 30  # 40 points below contact info
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, summary_y_position, "Summary:")
+    pdf.drawString(100, summary_y_position, "Summary")
     pdf.setFont("Helvetica", 12)
     pdf.drawString(100, summary_y_position - 20, f"{summary}")
 
     # Education Section (Move down similarly)
     education_y_position = summary_y_position - 50  # 50 points below summary
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, education_y_position, "Education:")
+    pdf.drawString(100, education_y_position, "Education")
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, education_y_position - 20, f"{university}")
-    pdf.drawString(100, education_y_position - 35, f"{grad_year}")
+    for education in education_list:
+        pdf.drawString(100, education_y_position -20, f"- {education}")
+        education_y_position -= 25
 
     # Experience Section
-    experience_y_position = education_y_position - 60  # 60 points below education
+
+    # Add experience section to the PDF
+    experience_y_position = education_y_position - 60
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawString(100, experience_y_position, "Experience:")
+
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, experience_y_position - 20, "Python Developer Intern")
-    pdf.drawString(100, experience_y_position - 35, "Tech Solutions | January 2023 - Present")
-    pdf.drawString(100, experience_y_position - 55, "- Worked on automating data pipelines for AI models")
-    pdf.drawString(100, experience_y_position - 70, "- Built web scraping scripts using Python")
-    pdf.drawString(100, experience_y_position - 85, "- Contributed to AI model performance monitoring tools")
+     # 60 points below education
+
+    # Loop through the experiences and display them in bullet points
+    for experience in exp_list:
+        pdf.drawString(100, experience_y_position-20, f"• {experience}")
+        experience_y_position -= 25  # Move down for the next experience
+
 
     # Skills Section
-    skills_y_position = experience_y_position - 120  # 120 points below experience section
+    skills_y_position = experience_y_position - 30  # 60 points below experience section
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(100, skills_y_position, "Skills:")
+    pdf.drawString(100, skills_y_position, "Skills")
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, skills_y_position - 20, "- Python, SQL, MySQL")
-    pdf.drawString(100, skills_y_position - 35, "- HTML, CSS, JavaScript")
-    pdf.drawString(100, skills_y_position - 50, "- Machine Learning (Beginner)")
+
+
+    for skill in skills_list:
+        pdf.drawString(100, skills_y_position - 20, f"- {skill}")
+        skills_y_position -= 25
 
     # Save PDF
     pdf.save()
@@ -109,31 +155,29 @@ if __name__ == '__main__':
     profile_image = resize_circle_image(profile_image_path)
     while True:
         try:
-            # first_name = input('Enter your first name: ')
-            first_name = "yusufali"
-            # last_name = input('Enter your last name: ')
-            last_name = "kromitdinov"
-            phone_number = "+15555555555"
-            email_address = "aaa@gmail.com"
-            linkedin_profile = 'jondoe.linkedin.com'
-            full_adress = "Uzbekistan, Tashkent, Tashkent city"
-            university = "IDU"
-            graduation = "2026"
-            work_experience = "2"
-            skills = "Python, SQL, MySQL"
-            summary = "I am AI developer"
-            # date_of_birth = input('Enter your date of birth(YYYY-MM-DD): ')
-            # phone_number = input('Enter your phone number: ')
-            # email_adress = input('Enter your gmail address: ')
-            # full_adress = input('Enter your adress(Country, State, City): ')
+            first_name = input('Enter your first name: ')
+            # first_name = "yusufali"
+            last_name = input('Enter your last name: ')
+            email_address = input('Enter your gmail address: ')
+            phone_number = input('Enter your phone number: ')
+            linkedin_profile = input('Enter your linkedin profile link: ')
+            date_of_birth = get_date_of_birth()
+            summary = input('Enter your summary: ')
+            education_list = get_education()
+            exp_list = get_experience()
+            skills_list = get_skills()
+            # last_name = "kromitdinov"
+            # phone_number = "+15555555555"
+            # email_address = "aaa@gmail.com"
+            # linkedin_profile = 'jondoe.linkedin.com'
+
+
+
+
             # print("Enter your Education")
-            # university = input("Enter your university: ")
-            # graduation = input("Enter your graduation: ")
-            # work_experience = input('Enter your work experience: ')
-            # skills = input('Enter your skills: ')
-            # summary = input('Enter your summary: ')
+
             print("Your Resume Is Building to PDF Please wait! \n Thank You!")
             break
         except ValueError:
             print("Please enter numbers for (Date of Birth and Phone Number)")
-    create_resume_pdf(first_name, last_name,summary, phone_number,email_address,linkedin_profile, full_adress, university, graduation, work_experience, skills, profile_image)
+    create_resume_pdf(first_name, last_name,email_address,phone_number,linkedin_profile,date_of_birth,summary, education_list, exp_list, skills_list, profile_image)
