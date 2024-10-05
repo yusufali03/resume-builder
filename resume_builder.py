@@ -35,7 +35,7 @@ def resize_circle_image(file_path):
         return circular_image
 
 
-def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfile,date_of_birth,summary,  education_list, exp_list, skills_list,profileImg):
+def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfile,date_of_birth,summary,  education_list, exp_list, skills_list,profileImg, languages):
     pdf = canvas.Canvas(f"resume-{firstName.upper()}.pdf", pagesize=letter)
     width, height = letter
 
@@ -54,28 +54,6 @@ def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfi
     title_y_position = image_y_position-50  # 30 points below image
     pdf.drawCentredString(width / 2.0, title_y_position, f"{firstName.upper()} {lastName.upper()}")
 
-    # Contact Info (Move this down further so it's below the title)
-    # pdf.setFont("Helvetica", 12)
-    # line_height = 20  # Spacing between lines
-    # contact_y_position = title_y_position - 25  # 25 points below the title for contact info
-    # pdf.drawCentredString(width / 2.5, contact_y_position, "Email: ")
-    # pdf.setFillColorRGB(0,0,1)
-    # pdf.drawCentredString(width / 2.0, contact_y_position, f"{emailAddress}")
-    #
-    #
-    # pdf.setFillColorRGB(0,0,0)
-    # pdf.drawCentredString(width / 2.0, contact_y_position - line_height, f"Phone: {phoneNumber}")
-    # pdf.drawCentredString(width / 2.7, contact_y_position -2 * line_height, "Linkedin: ")
-    #
-    #
-    # pdf.setFillColorRGB(0,0,1)
-    # pdf.drawCentredString(width / 2.0, contact_y_position - 2 * line_height, f"{linkedinProfile}")
-    #
-    #
-    # pdf.setFillColorRGB(0,0,0)
-    # pdf.drawCentredString(width / 2.0, contact_y_position - 3 * line_height, date_of_birth)
-    # Set the font and sizes for labels and content
-    # Set font and line height
     pdf.setFont("Helvetica", 12)
     line_height = 20  # Spacing between lines
     contact_y_position = title_y_position - 40  # Adjust spacing for contact info
@@ -146,6 +124,15 @@ def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfi
         pdf.drawString(100, skills_y_position - 20, f"- {skill}")
         skills_y_position -= 25
 
+    # Languages
+    languages_y_position = experience_y_position - 90
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(100, languages_y_position, "Languages")
+    pdf.setFont("Helvetica", 12)
+    for language in languages[0]:
+        pdf.drawString(100, languages_y_position - 20, f"• {language}")
+        languages_y_position -= 25
+
     # Save PDF
     pdf.save()
 
@@ -166,13 +153,8 @@ if __name__ == '__main__':
             education_list = get_education()
             exp_list = get_experience()
             skills_list = get_skills()
-            # last_name = "kromitdinov"
-            # phone_number = "+15555555555"
-            # email_address = "aaa@gmail.com"
-            # linkedin_profile = 'jondoe.linkedin.com'
-
-
-
+            languages = input('Enter your languages(English, Russian, etc): ')
+            langs_array = [languages.split(",")]
 
             # print("Enter your Education")
 
@@ -180,4 +162,4 @@ if __name__ == '__main__':
             break
         except ValueError:
             print("Please enter numbers for (Date of Birth and Phone Number)")
-    create_resume_pdf(first_name, last_name,email_address,phone_number,linkedin_profile,date_of_birth,summary, education_list, exp_list, skills_list, profile_image)
+    create_resume_pdf(first_name, last_name,email_address,phone_number,linkedin_profile,date_of_birth,summary, education_list, exp_list, skills_list, profile_image, langs_array)
