@@ -16,3 +16,12 @@ Please enter a list of skills (Frontend: HTML, CSS, JavaScript): Frontend: HTML,
 Please enter a sign + to add or - to exit : -
 Enter your languages(English, Russian, etc): English, Uzbek, Russian
 Your Resume Is Building to PDF Please wait!
+
+
+import telebot
+from telebot import types
+
+from resume_builder import *
+
+API_TOKEN = '7065357045:AAHR0VPIzQDC_W1P3g1aTgR2aLtEpLCD0HY'
+bot = telebot.TeleBot(API_TOKEN)

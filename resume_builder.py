@@ -32,14 +32,18 @@ def resize_circle_image(file_path):
         circular_image = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
         circular_image.paste(img, (0, 0), circle_mask)
 
-        return circular_image
+        output_path = "resized_" + file_path
+        circular_image.save(output_path, format='PNG')
+
+        return output_path
 
 
-def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfile,date_of_birth,summary,  education_list, exp_list, skills_list,profileImg, languages):
+def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfile,date_of_birth,summary,  education_list, exp_list, skills_list,profileImgPath, languages):
     pdf = canvas.Canvas(f"resume-{firstName.upper()}.pdf", pagesize=letter)
     width, height = letter
 
     # Load image
+    profileImg = Image.open(profileImgPath)
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
         profileImg.save(temp_file.name)
 
@@ -125,7 +129,7 @@ def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfi
         skills_y_position -= 25
 
     # Languages
-    languages_y_position = experience_y_position - 90
+    languages_y_position = experience_y_position - 100
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawString(100, languages_y_position, "Languages")
     pdf.setFont("Helvetica", 12)
