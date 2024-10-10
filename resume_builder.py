@@ -21,18 +21,40 @@ def get_image_path():
 
 
 def resize_circle_image(file_path):
+    # Check if the input file exists
+    if not os.path.exists(file_path):
+        print(f'Error: the file {file_path} does not exist!')
+        return None
+
     with Image.open(file_path) as img:
+        # Resize the image while maintaining the aspect ratio
         img.thumbnail((400, 400))
 
+        # Create a circular mask
         circle_mask = Image.new('L', img.size, 0)
         draw = ImageDraw.Draw(circle_mask)
+
+        # Draw a filled circle in the mask
         draw.ellipse((0, 0, img.size[0], img.size[1]), fill=255)
 
         # Create a new image with a transparent background
         circular_image = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
-        circular_image.paste(img, (0, 0), circle_mask)
 
-        output_path = "resized_" + file_path
+        # Calculate centering for the circular image
+        x_offset = (circular_image.size[0] - img.size[0]) // 2
+        y_offset = (circular_image.size[1] - img.size[1]) // 2
+
+        # Paste the image onto the circular mask
+        circular_image.paste(img, (x_offset, y_offset), circle_mask)
+
+        # Ensure output directory exists
+        output_dir = "./Images/resized"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Save the circular image in the output directory
+        output_path = os.path.join(output_dir,
+                                   f"circular_{os.path.basename(file_path)}")  # Use basename to avoid path issues
         circular_image.save(output_path, format='PNG')
 
         return output_path

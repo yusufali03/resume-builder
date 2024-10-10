@@ -1,6 +1,7 @@
 import telebot
 from telebot import types
 from resume_builder import create_resume_pdf, resize_circle_image  # Import your resume creation function
+import os
 
 API_TOKEN = '7065357045:AAHR0VPIzQDC_W1P3g1aTgR2aLtEpLCD0HY'
 bot = telebot.TeleBot(API_TOKEN)
@@ -17,7 +18,7 @@ def help_command(message):
 @bot.message_handler(commands=['build_resume'])
 def build_resume_command(message):
     user_data[message.chat.id] = {}  # Initialize user data
-    bot.reply_to(message, "Let's build your resume! Please enter your Image")
+    bot.reply_to(message, "Let's build your resume! Please enter your Image: ")
     user_data[message.chat.id]["step"] = "PROFILE_IMAGE"
 
 
@@ -29,7 +30,7 @@ def get_prompt_for_field(field_name):
         "email": "Please enter your email address:",
         "phone": "Please enter your phone number:",
         "linkedin": "Please enter your LinkedIn profile URL:",
-        "dob": "Please enter your date of birth (Month Day, Year):",
+        "dob": "Please enter your date of birth (January 5, 2000):",
         "summary": "Please enter your summary:",
         "education": "Please enter your education details (e.g., MIT University, 2020-2024, AI BC):",
         "experience": "Please enter your experience details (e.g., Company Name, Role, Duration):",
@@ -62,11 +63,7 @@ def get_multiple_entries(user_id, field_name, message):
             elif field_name == "experience":
                 handle_skills(msg)
             elif field_name == "skills":
-                handle_languages(msg)
-            elif field_name == "languages":
-                # Handle the final step or any other logic you need
-                # For example, you can call a function to build the resume here
-                build_resume(msg)
+               handle_languages_input(user_id)
         elif entry == "+":
             prompt_user()  # Prompt for another entry
         else:
@@ -159,10 +156,20 @@ def handle_skills(message):
     user_data[user_id]["step"] = "SKILLS"
     get_multiple_entries(user_id, "skills", message)
 
-def handle_languages(message):
-    user_id = message.chat.id
+def handle_languages_input(user_id):
+    bot.send_message(user_id, get_prompt_for_field("languages"))
+
     user_data[user_id]["step"] = "LANGUAGES"
-    get_multiple_entries(user_id, "languages", message)
+
+    @bot.message_handler(func=lambda msg: msg.chat.id == user_id and user_data[user_id].get("step") == "LANGUAGES")
+    def handle_languages(msg):
+        # Handle languages input
+        languages = msg.text
+        user_data[user_id]["languages"] = [languages]  # Save the languages
+        bot.send_message(user_id, "Languages saved! Now generating your resume...")
+
+        # Call the function to build and send the resume
+        build_resume(msg)
 
 
 
@@ -186,12 +193,43 @@ def build_resume(message):
     profile_image_file_id = data["profile_image"]
 
     # Download the profile image
-    profile_image_path = f"profile_image_{first_name}_{last_name}.jpg"
-    profile_image = resize_circle_image(profile_image_path)
-    file_info = bot.get_file(profile_image_file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    with open(profile_image_path, 'wb') as new_file:
-        new_file.write(downloaded_file)
+    image_dir = "./Images"
+    if not os.path.exists(image_dir):
+        os.makedirs(image_dir)
+
+    profile_image = None
+    profile_image_path = f"{image_dir}/profile_image_{first_name}_{last_name}.jpg"
+
+
+    if profile_image_file_id:
+        try:
+            file_info = bot.get_file(profile_image_file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            if downloaded_file:
+                with open(profile_image_path, 'wb') as new_file:
+                    new_file.write(downloaded_file)
+            else:
+                print("Failed to download profile image.")
+                bot.reply_to(message, "Failed to download profile image.")
+
+        except Exception as e:
+            print(f"Error while saving profile image{e}")
+            bot.reply_to(message, f"Failed to save profile image: {e}")
+
+    else:
+       print("No profile image file found.")
+       bot.reply_to(message, "Please upload profile image.")
+
+    # Try resizing the image
+    try:
+        if os.path.exists(profile_image_path):
+             profile_image = resize_circle_image(profile_image_path)
+        else:
+            print(f"Profile image file is not found: {profile_image_path}")
+            bot.reply_to(message, "Profile image file is not found.")
+    except Exception as e:
+        print(f"Error while resizing profile image{e}")
 
     # Generate the PDF using the function from `resume_builder.py`
     create_resume_pdf(
