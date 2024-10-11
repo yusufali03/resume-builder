@@ -21,40 +21,41 @@ def get_image_path():
 
 
 def resize_circle_image(file_path):
-    # Check if the input file exists
     if not os.path.exists(file_path):
         print(f'Error: the file {file_path} does not exist!')
         return None
 
     with Image.open(file_path) as img:
-        # Resize the image while maintaining the aspect ratio
+        # Resize the image to fit within 400x400 and maintain aspect ratio
         img.thumbnail((400, 400))
 
+        # Create a new square image with a transparent background (RGBA)
+        square_img = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
+
+        # Calculate position to paste the image in the center of the square canvas
+        x_offset = (400 - img.size[0]) // 2
+        y_offset = (400 - img.size[1]) // 2
+
+        # Paste the resized image onto the square canvas
+        square_img.paste(img, (x_offset, y_offset))
+
         # Create a circular mask
-        circle_mask = Image.new('L', img.size, 0)
+        circle_mask = Image.new('L', (400, 400), 0)
         draw = ImageDraw.Draw(circle_mask)
 
         # Draw a filled circle in the mask
-        draw.ellipse((0, 0, img.size[0], img.size[1]), fill=255)
+        draw.ellipse((0, 0, 400, 400), fill=255)
 
-        # Create a new image with a transparent background
+        # Apply the circular mask to the square image
         circular_image = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
+        circular_image.paste(square_img, (0, 0), mask=circle_mask)
 
-        # Calculate centering for the circular image
-        x_offset = (circular_image.size[0] - img.size[0]) // 2
-        y_offset = (circular_image.size[1] - img.size[1]) // 2
 
-        # Paste the image onto the circular mask
-        circular_image.paste(img, (x_offset, y_offset), circle_mask)
-
-        # Ensure output directory exists
+        # Save the circular image to a file (uncomment this when you need to save it)
         output_dir = "./Images/resized"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-
-        # Save the circular image in the output directory
-        output_path = os.path.join(output_dir,
-                                   f"circular_{os.path.basename(file_path)}")  # Use basename to avoid path issues
+        output_path = os.path.join(output_dir, f"circular_{os.path.basename(file_path)}")
         circular_image.save(output_path, format='PNG')
 
         return output_path
@@ -155,7 +156,7 @@ def create_resume_pdf(firstName, lastName,emailAddress,phoneNumber,linkedinProfi
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawString(100, languages_y_position, "Languages")
     pdf.setFont("Helvetica", 12)
-    for language in languages[0]:
+    for language in languages:
         pdf.drawString(100, languages_y_position - 20, f"• {language}")
         languages_y_position -= 25
 

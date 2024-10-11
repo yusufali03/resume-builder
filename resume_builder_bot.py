@@ -1,4 +1,5 @@
 import telebot
+from pip._internal import commands
 from telebot import types
 from resume_builder import create_resume_pdf, resize_circle_image  # Import your resume creation function
 import os
@@ -9,7 +10,15 @@ bot = telebot.TeleBot(API_TOKEN)
 user_data = {}
 @bot.message_handler(commands=['start'])
 def start(message):
+    commands = [
+          types.BotCommand("/start", "Welcome to Resume Builder"),
+          types.BotCommand("/help", "Show available commands"),
+          types.BotCommand("/build_resume", "Start Building Your Resume")
+      ]
+
+    bot.set_my_commands(commands)
     bot.reply_to(message, "Hello, Welcome to Resume Builder Bot! Type /help to see all commands!")
+
 
 @bot.message_handler(commands=['help'])
 def help_command(message):
@@ -32,7 +41,7 @@ def get_prompt_for_field(field_name):
         "linkedin": "Please enter your LinkedIn profile URL:",
         "dob": "Please enter your date of birth (January 5, 2000):",
         "summary": "Please enter your summary:",
-        "education": "Please enter your education details (e.g., MIT University, 2020-2024, AI BC):",
+        "education": "Please enter your education details (e.g., MIT University, 2020-2024, AI BC ): ",
         "experience": "Please enter your experience details (e.g., Company Name, Role, Duration):",
         "skills": "Please enter your skills: (Frontend: HTML, CSS, JavaScript)",
         "languages": "Please enter the languages you know (e.g., English, Spanish, etc.):"
@@ -46,7 +55,7 @@ def get_multiple_entries(user_id, field_name, message):
     prompt = get_prompt_for_field(field_name)  # Get the prompt for the specific field
 
     def prompt_user():
-        bot.send_message(user_id, f"{prompt} Type '+' to add another or '-' to finish.")
+        bot.send_message(user_id, f"{prompt} \n Type '+' to add another or '-' to finish.")
 
     prompt_user()
 
@@ -136,15 +145,13 @@ def handle_summary(message):
     user_id = message.chat.id
     user_data[user_id]["summary"] = message.text
     user_data[user_id]["step"] = "EDUCATION"
-    bot.reply_to(message, get_prompt_for_field("education"))
-    handle_education(message)
+    get_multiple_entries(user_id, 'education', message)
 
 
 
 def handle_education(message):
     user_id = message.chat.id  # Extract chat ID from the message
     user_data[user_id]["step"] = "EDUCATION"  # Fix: Use `user_id` consistently
-    get_multiple_entries(user_id, "education", message)
 
 def handle_experience(message):
     user_id = message.chat.id
@@ -189,7 +196,7 @@ def build_resume(message):
     experience = data["experience"]
     skills = data["skills"]
     languages = data["languages"]
-    langs_array = [languages]
+    langs_array = [lang.strip() for lang in languages]
     profile_image_file_id = data["profile_image"]
 
     # Download the profile image
